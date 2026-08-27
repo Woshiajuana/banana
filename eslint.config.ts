@@ -1,8 +1,9 @@
 import js from '@eslint/js'
+import { defineConfig } from 'eslint/config'
 import prettier from 'eslint-config-prettier'
 import tseslint from 'typescript-eslint'
 
-export default tseslint.config(
+export default defineConfig(
   {
     ignores: ['dist', 'node_modules', 'coverage', '*.config.ts', 'eslint.config.ts'],
   },
@@ -13,7 +14,7 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         project: './tsconfig.json',
-        tsconfigRootDir: import.meta.dirname,
+        tsconfigRootDir: new URL('.', import.meta.url).pathname,
       },
     },
   },
