@@ -11,9 +11,20 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
+    "prepare": "husky",
+    "precommit": "lint-staged",
     "lint": "eslint . --fix",
     "format": "prettier . --write",
     "format:check": "prettier . --check"
+  },
+  "lint-staged": {
+    "*.{js,mjs,cjs,ts,mts,cts}": [
+      "prettier --write",
+      "eslint --fix --max-warnings=0"
+    ],
+    "*.{json,md,yml,yaml,css,scss}": [
+      "prettier --write"
+    ]
   },
   "repository": {
     "type": "git",
@@ -35,7 +46,9 @@
     "eslint": "^10.9.1",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.11.0",
+    "husky": "^9.1.7",
     "jiti": "^2.7.0",
+    "lint-staged": "^16.4.0",
     "prettier": "^3.9.6",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
