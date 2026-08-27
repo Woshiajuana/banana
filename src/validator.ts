@@ -2,6 +2,12 @@ import type { Field, Metadata, Rule } from './types'
 import { normalizeMetadata } from './utils'
 
 export interface ValidateOptions {
+  // 是否验证 children 默认 true
+  validateChildren?: boolean
+
+  // children 字段名 默认 children
+  childrenKey?: string
+
   onError?: (error: unknown, field: Field, metadata: Metadata) => void | Promise<void>
 }
 
@@ -29,8 +35,10 @@ export async function validate(metadata: Metadata, options: ValidateOptions = {}
       await options.onError(error, field, metadata)
     }
 
-    if (field.children) {
-      await validate(field.children, options)
+    const children = getChildrenMetadata(field, options)
+
+    if (options.validateChildren !== false && children) {
+      await validate(children, options)
     }
   }
 }
@@ -64,6 +72,20 @@ async function runRules(value: unknown, field: Field, metadata: Metadata) {
   for (const rule of field.rules ?? []) {
     await run(value, rule, field, metadata)
   }
+}
+
+function getChildrenMetadata(field: Field, options: ValidateOptions): Metadata | undefined {
+  const children = field[options.childrenKey ?? 'children']
+
+  if (Array.isArray(children)) {
+    return children as Metadata
+  }
+
+  if (children && typeof children === 'object') {
+    return children as Metadata
+  }
+
+  return undefined
 }
 
 function isEmpty(value: unknown) {
