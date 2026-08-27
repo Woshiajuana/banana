@@ -1,25 +1,32 @@
 import type { Field, Metadata, Rule } from './types'
+import { normalizeMetadata } from './utils'
 
 export interface ValidateOptions {
-  // 是否排除 hidden 项 默认 true
-  excludeHiddenField?: boolean
-
-  // 是否包含本身 value 默认 false
-  includeSelfField?: boolean
+  onError?: (error: unknown, field: Field, metadata: Metadata) => void | Promise<void>
 }
 
 export async function validate(metadata: Metadata, options: ValidateOptions = {}) {
   const fields = normalizeMetadata(metadata)
 
   for (const field of fields) {
-    const value = getFieldValue(field)
+    const value = field.value === undefined ? field.defaultValue : field.value
+    const hidden =
+      typeof field.hidden === 'function'
+        ? field.hidden(value, field, metadata)
+        : field.hidden === true
 
-    if (shouldSkipField(value, field, metadata, options)) {
+    if (hidden) {
       continue
     }
 
-    if (shouldValidateSelf(field, options)) {
+    try {
       await runRules(value, field, metadata)
+    } catch (error) {
+      if (!options.onError) {
+        throw error
+      }
+
+      await options.onError(error, field, metadata)
     }
 
     if (field.children) {
@@ -51,46 +58,6 @@ export async function run(value: unknown, rule: Rule, field: Field = {}, metadat
 
     throw error
   }
-}
-
-function normalizeMetadata(metadata: Metadata): Field[] {
-  if (Array.isArray(metadata)) {
-    return metadata
-  }
-
-  return Object.entries(metadata).map(([key, field]) => ({
-    key,
-    ...field,
-  }))
-}
-
-function getFieldValue(field: Field) {
-  return field.value === undefined ? field.defaultValue : field.value
-}
-
-function shouldSkipField(
-  value: unknown,
-  field: Field,
-  metadata: Metadata,
-  options: ValidateOptions,
-) {
-  if (options.excludeHiddenField === false) {
-    return false
-  }
-
-  if (typeof field.hidden === 'function') {
-    return field.hidden(value, field, metadata)
-  }
-
-  return field.hidden === true
-}
-
-function shouldValidateSelf(field: Field, options: ValidateOptions) {
-  if (!field.children) {
-    return true
-  }
-
-  return options.includeSelfField === true
 }
 
 async function runRules(value: unknown, field: Field, metadata: Metadata) {
