@@ -1,0 +1,28 @@
+{
+  "name": "@ajuanjs/banana",
+  "version": "0.0.1",
+  "description": "校验、赋值、提取",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Woshiajuana/banana.git"
+  },
+  "keywords": [
+    "banana",
+    "form",
+    "validate"
+  ],
+  "author": "woshiajuana <979703986@qq.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Woshiajuana/banana/issues"
+  },
+  "homepage": "https://github.com/Woshiajuana/banana#readme",
+  "devDependencies": {
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  }
+}

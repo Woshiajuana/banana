@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "jsx": "preserve",
+    "jsxImportSource": "vue",
+    "strict": true,
+    "target": "ES2015",
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "moduleResolution": "Node",
+    "verbatimModuleSyntax": true,
+    "lib": ["esnext", "dom"]
+  },
+  "include": ["src/**/*"]
+}
