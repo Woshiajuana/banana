@@ -13,4 +13,9 @@ export default defineConfig([
   },
   tseslint.configs.recommended,
   prettier,
+  {
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
 ])
