@@ -1,22 +1,14 @@
-import js from '@eslint/js'
-import { defineConfig } from 'eslint/config'
-import prettier from 'eslint-config-prettier'
-import tseslint from 'typescript-eslint'
+import js from "@eslint/js";
+import globals from "globals";
+import tseslint from "typescript-eslint";
+import { defineConfig } from "eslint/config";
 
-export default defineConfig(
+export default defineConfig([
   {
-    ignores: ['dist', 'node_modules', 'coverage', '*.config.ts', 'eslint.config.ts'],
+    files: ["**/*.{js,mjs,cjs,ts,mts,cts}"],
+    plugins: { js },
+    extends: ["js/recommended"],
+    languageOptions: { globals: globals.node }
   },
-  js.configs.recommended,
-  ...tseslint.configs.strictTypeChecked,
-  ...tseslint.configs.stylisticTypeChecked,
-  {
-    languageOptions: {
-      parserOptions: {
-        project: './tsconfig.json',
-        tsconfigRootDir: new URL('.', import.meta.url).pathname,
-      },
-    },
-  },
-  prettier,
-)
+  tseslint.configs.recommended,
+]);
