@@ -43,7 +43,7 @@ export async function validate(metadata: Metadata, options: ValidateOptions = {}
   }
 }
 
-export async function run(value: unknown, rule: Rule, field: Field = {}, metadata: Metadata = []) {
+async function run(value: unknown, rule: Rule, field: Field = {}, metadata: Metadata = []) {
   if (typeof rule === 'function') {
     await rule(value, field, metadata)
     return
