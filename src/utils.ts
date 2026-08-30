@@ -1,4 +1,4 @@
-import type { Field, Metadata } from './types'
+import type { Field, Metadata, Options } from './types'
 
 export function normalizeMetadata(metadata: Metadata): Field[] {
   if (Array.isArray(metadata)) {
@@ -9,4 +9,18 @@ export function normalizeMetadata(metadata: Metadata): Field[] {
     key,
     ...field,
   }))
+}
+
+export function getChildrenMetadata(field: Field, options: Options): Metadata | undefined {
+  const children = field[options.childrenField ?? 'children']
+
+  if (Array.isArray(children)) {
+    return children as Metadata
+  }
+
+  if (children && typeof children === 'object') {
+    return children as Metadata
+  }
+
+  return undefined
 }

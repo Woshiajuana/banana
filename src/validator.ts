@@ -1,13 +1,7 @@
-import type { Field, Metadata, Rule } from './types'
-import { normalizeMetadata } from './utils'
+import type { Field, Metadata, Options, Rule } from './types'
+import { getChildrenMetadata, normalizeMetadata } from './utils'
 
-export interface ValidateOptions {
-  // 是否递归验证子级 默认 false
-  recursive?: boolean
-
-  // 子级字段名 默认 children
-  childrenField?: string
-
+export interface ValidateOptions extends Options {
   onError?: (error: unknown, field: Field, metadata: Metadata) => void | Promise<void>
 }
 
@@ -72,20 +66,6 @@ async function runRules(value: unknown, field: Field, metadata: Metadata) {
   for (const rule of field.rules ?? []) {
     await run(value, rule, field, metadata)
   }
-}
-
-function getChildrenMetadata(field: Field, options: ValidateOptions): Metadata | undefined {
-  const children = field[options.childrenField ?? 'children']
-
-  if (Array.isArray(children)) {
-    return children as Metadata
-  }
-
-  if (children && typeof children === 'object') {
-    return children as Metadata
-  }
-
-  return undefined
 }
 
 function isEmpty(value: unknown) {

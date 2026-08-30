@@ -6,6 +6,9 @@ import tseslint from 'typescript-eslint'
 
 export default defineConfig([
   {
+    ignores: ['dist/**', 'node_modules/**', 'coverage/**'],
+  },
+  {
     files: ['**/*.{js,mjs,cjs,ts,mts,cts}'],
     plugins: { js },
     extends: ['js/recommended'],
@@ -16,6 +19,7 @@ export default defineConfig([
   {
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-empty-object-type': 'off',
       '@typescript-eslint/no-unused-vars': 'warn',
     },
   },

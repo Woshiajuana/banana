@@ -1,3 +1,11 @@
+export interface Options {
+  // 是否递归验证子级 默认 false
+  recursive?: boolean
+
+  // 子级字段名 默认 children
+  childrenField?: string
+}
+
 export type Validator = (value: unknown, field: Field, metadata: Metadata) => void | Promise<void>
 
 export type Rule =
@@ -15,7 +23,7 @@ export interface Field<S = any> {
   rules?: Rule[]
   hidden?: boolean | ((value: unknown, field: Field, metadata: Metadata) => boolean)
   set?: (source: S, field: Field, data: Metadata) => void
-  get?: (value: unknown, field: Field, data: Metadata) => unknown
+  get?: (value: unknown, field: Field, data: Metadata) => unknown | Promise<unknown>
   children?: Metadata
   [key: string]: unknown
 }
