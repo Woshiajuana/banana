@@ -2,11 +2,11 @@ import type { Field, Metadata, Rule } from './types'
 import { normalizeMetadata } from './utils'
 
 export interface ValidateOptions {
-  // 是否验证 children 默认 true
-  validateChildren?: boolean
+  // 是否递归验证子级 默认 false
+  recursive?: boolean
 
-  // children 字段名 默认 children
-  childrenKey?: string
+  // 子级字段名 默认 children
+  childrenField?: string
 
   onError?: (error: unknown, field: Field, metadata: Metadata) => void | Promise<void>
 }
@@ -37,7 +37,7 @@ export async function validate(metadata: Metadata, options: ValidateOptions = {}
 
     const children = getChildrenMetadata(field, options)
 
-    if (options.validateChildren !== false && children) {
+    if (options.recursive === true && children) {
       await validate(children, options)
     }
   }
@@ -75,7 +75,7 @@ async function runRules(value: unknown, field: Field, metadata: Metadata) {
 }
 
 function getChildrenMetadata(field: Field, options: ValidateOptions): Metadata | undefined {
-  const children = field[options.childrenKey ?? 'children']
+  const children = field[options.childrenField ?? 'children']
 
   if (Array.isArray(children)) {
     return children as Metadata
