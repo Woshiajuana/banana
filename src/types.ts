@@ -8,16 +8,16 @@ export type Rule =
     }
   | Validator
 
-export interface Field {
+export interface Field<S = any> {
   key?: string
   value?: unknown
   defaultValue?: unknown
   rules?: Rule[]
   hidden?: boolean | ((value: unknown, field: Field, metadata: Metadata) => boolean)
-  set?: (source: unknown, field: Field, data: Metadata) => void
+  set?: (source: S, field: Field, data: Metadata) => void
   get?: (value: unknown, field: Field, data: Metadata) => unknown
   children?: Metadata
   [key: string]: unknown
 }
 
-export type Metadata = Record<string, Field> | Field[]
+export type Metadata<S = any> = Record<string, Field<S>> | Field<S>[]
