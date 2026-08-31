@@ -1,5 +1,5 @@
 import type { Metadata, Options } from './types'
-import { getChildrenMetadata, isFunction, normalizeMetadata } from './utils'
+import { getChildrenMetadata, isFunction, isUndefined, normalizeMetadata } from './utils'
 
 export interface AssignOptions extends Options {}
 
@@ -27,7 +27,7 @@ export async function assign(
     const value = source[key]
     if (isFunction(set)) {
       set(source, field, metadata)
-    } else if (typeof value !== 'undefined') {
+    } else if (!isUndefined(value)) {
       field.value = value
     }
   }

@@ -1,9 +1,12 @@
 import type { Field, Metadata, Options } from './types'
 
-export const isObject = (v: any) => Object.prototype.toString.call(v) === '[object Object]'
+export const isObject = (v: unknown): v is Record<string, unknown> =>
+  Object.prototype.toString.call(v) === '[object Object]'
 
 export const isFunction = <T extends (...args: any[]) => any>(v: unknown): v is T =>
   typeof v === 'function'
+
+export const isUndefined = (v: unknown): v is undefined => typeof v === 'undefined'
 
 export function normalizeMetadata(metadata: Metadata): Field[] {
   if (Array.isArray(metadata)) {

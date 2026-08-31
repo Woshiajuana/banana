@@ -1,5 +1,5 @@
 import type { Metadata, Options } from './types'
-import { getChildrenMetadata, isFunction, isObject, normalizeMetadata } from './utils'
+import { getChildrenMetadata, isFunction, isObject, isUndefined, normalizeMetadata } from './utils'
 
 export interface ExtractOptions extends Options {}
 
@@ -28,7 +28,7 @@ export async function extract<T extends Record<string, unknown> = Record<string,
       }
     }
 
-    if (typeof value === 'undefined' || !key) {
+    if (isUndefined(value) || !key) {
       continue
     }
 
