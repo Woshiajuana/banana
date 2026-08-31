@@ -1,5 +1,5 @@
 import type { Metadata, Options } from './types'
-import { getChildrenMetadata, isObject, normalizeMetadata } from './utils'
+import { getChildrenMetadata, isFunction, isObject, normalizeMetadata } from './utils'
 
 export interface ExtractOptions extends Options {}
 
@@ -20,11 +20,11 @@ export async function extract<T extends Record<string, unknown> = Record<string,
       Object.assign(result, await extract(children, options))
     }
 
-    if (typeof hidden === 'function') {
+    if (isFunction(hidden)) {
       hidden = hidden(value, field, metadata)
 
       if (hidden) {
-        value = typeof defaultValue === 'function' ? defaultValue(value) : defaultValue
+        value = isFunction(defaultValue) ? defaultValue(value) : defaultValue
       }
     }
 
@@ -32,7 +32,7 @@ export async function extract<T extends Record<string, unknown> = Record<string,
       continue
     }
 
-    if (typeof get === 'function') {
+    if (isFunction(get)) {
       value = get(value, field, metadata)
 
       if (isObject(value)) {

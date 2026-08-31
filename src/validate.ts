@@ -1,5 +1,5 @@
 import type { Field, Metadata, Options, Rule } from './types'
-import { getChildrenMetadata, normalizeMetadata } from './utils'
+import { getChildrenMetadata, isFunction, normalizeMetadata } from './utils'
 
 export interface ValidateOptions extends Options {
   onError?: (error: unknown, field: Field, metadata: Metadata) => void | Promise<void>
@@ -10,10 +10,9 @@ export async function validate(metadata: Metadata, options: ValidateOptions = {}
 
   for (const field of fields) {
     const value = field.value === undefined ? field.defaultValue : field.value
-    const hidden =
-      typeof field.hidden === 'function'
-        ? field.hidden(value, field, metadata)
-        : field.hidden === true
+    const hidden = isFunction(field.hidden)
+      ? field.hidden(value, field, metadata)
+      : field.hidden === true
 
     if (hidden) {
       continue
@@ -38,7 +37,7 @@ export async function validate(metadata: Metadata, options: ValidateOptions = {}
 }
 
 async function run(value: unknown, rule: Rule, field: Field = {}, metadata: Metadata = []) {
-  if (typeof rule === 'function') {
+  if (isFunction(rule)) {
     await rule(value, field, metadata)
     return
   }
