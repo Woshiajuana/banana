@@ -1,32 +1,49 @@
 import type { Metadata, Options } from './types'
-import { getChildrenMetadata, normalizeMetadata } from './utils'
+import { getChildrenMetadata, isObject, normalizeMetadata } from './utils'
 
 export interface ExtractOptions extends Options {}
 
-export async function extract(metadata: Metadata, options: ExtractOptions = {}) {
+export async function extract<T extends Record<string, unknown> = Record<string, unknown>>(
+  metadata: Metadata,
+  options: ExtractOptions = {},
+) {
   const result: Record<string, unknown> = {}
   const fields = normalizeMetadata(metadata)
+  const { recursive } = options
 
   for (const field of fields) {
-    const value = field.value === undefined ? field.defaultValue : field.value
-    const hidden =
-      typeof field.hidden === 'function'
-        ? field.hidden(value, field, metadata)
-        : field.hidden === true
-
-    if (hidden || !field.key) {
-      continue
-    }
+    // eslint-disable-next-line prefer-const
+    let { get, value, defaultValue, key, hidden } = field
 
     const children = getChildrenMetadata(field, options)
+    if (recursive === true && children) {
+      Object.assign(result, await extract(children, options))
+    }
 
-    if (options.recursive === true && children) {
-      result[field.key] = await extract(children, options)
+    if (typeof hidden === 'function') {
+      hidden = hidden(value, field, metadata)
+
+      if (hidden) {
+        value = typeof defaultValue === 'function' ? defaultValue(value) : defaultValue
+      }
+    }
+
+    if (typeof value === 'undefined' || !key) {
       continue
     }
 
-    result[field.key] = field.get ? await field.get(value, field, metadata) : value
+    if (typeof get === 'function') {
+      value = get(value, field, metadata)
+
+      if (isObject(value)) {
+        Object.assign(result, value)
+      } else {
+        result[key] = value
+      }
+    } else {
+      result[key] = value
+    }
   }
 
-  return result
+  return result as T
 }

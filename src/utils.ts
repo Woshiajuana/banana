@@ -1,5 +1,7 @@
 import type { Field, Metadata, Options } from './types'
 
+export const isObject = (v: any) => Object.prototype.toString.call(v) === '[object Object]'
+
 export function normalizeMetadata(metadata: Metadata): Field[] {
   if (Array.isArray(metadata)) {
     return metadata

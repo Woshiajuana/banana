@@ -54,7 +54,21 @@ describe('extract', () => {
     })
   })
 
-  it('skips hidden field', async () => {
+  it('uses defaultValue when field is hidden', async () => {
+    await expect(
+      extract({
+        name: {
+          hidden: true,
+          value: 'banana',
+          defaultValue: 'default name',
+        },
+      }),
+    ).resolves.toEqual({
+      name: 'default name',
+    })
+  })
+
+  it('skips hidden field without defaultValue', async () => {
     await expect(
       extract({
         name: {
@@ -65,7 +79,21 @@ describe('extract', () => {
     ).resolves.toEqual({})
   })
 
-  it('skips field when hidden function returns true', async () => {
+  it('uses defaultValue when hidden function returns true', async () => {
+    await expect(
+      extract({
+        name: {
+          hidden: (value) => value === 'skip',
+          value: 'skip',
+          defaultValue: 'default name',
+        },
+      }),
+    ).resolves.toEqual({
+      name: 'default name',
+    })
+  })
+
+  it('skips field when hidden function returns true without defaultValue', async () => {
     await expect(
       extract({
         name: {
@@ -107,6 +135,40 @@ describe('extract', () => {
       }),
     ).resolves.toEqual({
       name: 'banana-split',
+    })
+  })
+
+  it('merges object returned from get hook into result', async () => {
+    await expect(
+      extract({
+        name: {
+          value: 'banana',
+          get(value) {
+            return {
+              label: value,
+              value,
+            }
+          },
+        },
+      }),
+    ).resolves.toEqual({
+      label: 'banana',
+      value: 'banana',
+    })
+  })
+
+  it('does not merge array returned from get hook', async () => {
+    await expect(
+      extract({
+        names: {
+          value: ['banana'],
+          get(value) {
+            return value
+          },
+        },
+      }),
+    ).resolves.toEqual({
+      names: ['banana'],
     })
   })
 
