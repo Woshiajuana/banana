@@ -1,11 +1,11 @@
-export * from './types'
-export * from './extract'
-export * from './validate'
 export * from './assign'
+export * from './extract'
+export * from './types'
+export * from './validate'
 
+import { assign } from './assign'
 import { extract } from './extract'
 import { validate } from './validate'
-import { assign } from './assign'
 
 export const banana = {
   extract,
