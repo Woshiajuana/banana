@@ -1,9 +1,9 @@
 export * from './types'
-export * from './extractor'
-export * from './validator'
+export * from './extract'
+export * from './validate'
 
-import { extract } from './extractor'
-import { validate } from './validator'
+import { extract } from './extract'
+import { validate } from './validate'
 
 export const banana = {
   extract,
