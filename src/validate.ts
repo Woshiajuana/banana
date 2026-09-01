@@ -2,15 +2,22 @@ import type { Field, Metadata, Options } from './types'
 import type { NormalizedMetadataItem } from './utils'
 import { getChildrenMetadata, isEmpty, isFunction, normalizeMetadata } from './utils'
 
+export interface ValidateErrorContext {
+  error: unknown
+  field: Field
+  key?: string
+  metadata: Metadata
+}
+
 export interface ValidateOptions extends Options {
-  onError?: (error: unknown, field: Field, metadata: Metadata) => void | Promise<void>
+  onError?: (context: ValidateErrorContext) => void
 }
 
 export async function validate(metadata: Metadata, options: ValidateOptions = {}) {
   const fields = normalizeMetadata(metadata)
   const { recursive = false, parallel = false } = options
 
-  const processField = async ({ field }: NormalizedMetadataItem) => {
+  const processField = async ({ field, key }: NormalizedMetadataItem) => {
     // eslint-disable-next-line prefer-const
     let { value, rules, hidden } = field
 
@@ -41,22 +48,19 @@ export async function validate(metadata: Metadata, options: ValidateOptions = {}
           continue
         }
 
-        try {
-          await rule.validator(value, field, metadata)
-        } catch (error) {
-          if (rule.message) {
-            throw new Error(rule.message, { cause: error })
-          }
-
-          throw error
-        }
+        await rule.validator(value, field, metadata)
       }
     } catch (error) {
       if (!options.onError) {
         throw error
       }
 
-      await options.onError(error, field, metadata)
+      options.onError({
+        error,
+        field,
+        key,
+        metadata,
+      })
     }
   }
 
