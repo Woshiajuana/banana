@@ -19,10 +19,10 @@ export type Rule =
 export interface Field<S = any> {
   key?: string
   value?: unknown
-  defaultValue?: unknown
+  defaultValue?: unknown | ((value: unknown, field: Field, metadata: Metadata) => unknown)
   rules?: Rule[]
   hidden?: boolean | ((value: unknown, field: Field, metadata: Metadata) => boolean)
-  set?: (source: S, field: Field, data: Metadata) => void
+  set?: (source: S, field: Field, data: Metadata) => void | Promise<void>
   get?: (value: unknown, field: Field, data: Metadata) => unknown | Promise<unknown>
   children?: Metadata
   [key: string]: unknown

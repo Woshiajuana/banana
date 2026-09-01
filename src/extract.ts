@@ -22,10 +22,9 @@ export async function extract<T extends Record<string, unknown> = Record<string,
 
     if (isFunction(hidden)) {
       hidden = hidden(value, field, metadata)
-
-      if (hidden) {
-        value = isFunction(defaultValue) ? defaultValue(value) : defaultValue
-      }
+    }
+    if (hidden) {
+      value = isFunction(defaultValue) ? defaultValue(value) : defaultValue
     }
 
     if (isUndefined(value) || !key) {
@@ -33,7 +32,7 @@ export async function extract<T extends Record<string, unknown> = Record<string,
     }
 
     if (isFunction(get)) {
-      value = get(value, field, metadata)
+      value = await get(value, field, metadata)
 
       if (isObject(value)) {
         Object.assign(result, value)

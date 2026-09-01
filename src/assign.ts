@@ -26,7 +26,7 @@ export async function assign(
 
     const value = source[key]
     if (isFunction(set)) {
-      set(source, field, metadata)
+      await set(source, field, metadata)
     } else if (!isUndefined(value)) {
       field.value = value
     }
