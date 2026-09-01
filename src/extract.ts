@@ -26,7 +26,7 @@ export async function extract<T extends Record<string, unknown> = Record<string,
       hidden = hidden(value, field, metadata)
     }
     if (hidden) {
-      value = isFunction(defaultValue) ? defaultValue(value) : defaultValue
+      value = isFunction(defaultValue) ? defaultValue(value, field, metadata) : defaultValue
     }
 
     if (isUndefined(value) || !key) {

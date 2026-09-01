@@ -33,7 +33,7 @@ export function normalizeMetadata(metadata: Metadata): NormalizedMetadataItem[] 
 
   return Object.entries(metadata).map(([key, field]) => ({
     field,
-    key,
+    key: field.key ?? key,
   }))
 }
 
