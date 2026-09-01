@@ -4,7 +4,7 @@
     "jsx": "preserve",
     "jsxImportSource": "vue",
     "strict": true,
-    "target": "ES2015",
+    "target": "ESNext",
     "module": "ESNext",
     "skipLibCheck": true,
     "esModuleInterop": true,
