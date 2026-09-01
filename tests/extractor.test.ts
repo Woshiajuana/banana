@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { extract } from '../src/extractor'
+import { extract } from '../src/extract'
 import type { Metadata } from '../src/types'
 
 describe('extract', () => {
@@ -29,16 +29,14 @@ describe('extract', () => {
     })
   })
 
-  it('uses defaultValue when value is undefined', async () => {
+  it('skips undefined value even when defaultValue is set', async () => {
     await expect(
       extract({
         name: {
           defaultValue: 'banana',
         },
       }),
-    ).resolves.toEqual({
-      name: 'banana',
-    })
+    ).resolves.toEqual({})
   })
 
   it('prefers value over defaultValue', async () => {
@@ -118,9 +116,52 @@ describe('extract', () => {
     })
     expect(get).toHaveBeenCalledWith(
       'banana',
-      expect.objectContaining({ key: 'name', value: 'banana' }),
+      expect.objectContaining({ value: 'banana' }),
       metadata,
     )
+  })
+
+  it('prefers explicit field key in object metadata', async () => {
+    await expect(
+      extract({
+        name: {
+          key: 'username',
+          value: 'banana',
+        },
+      }),
+    ).resolves.toEqual({
+      username: 'banana',
+    })
+  })
+
+  it('does not add key to object metadata fields', async () => {
+    const metadata: Metadata = {
+      name: {
+        value: 'banana',
+      },
+    }
+
+    await extract(metadata)
+
+    expect(metadata.name).toEqual({
+      value: 'banana',
+    })
+  })
+
+  it('passes value, field, and metadata to defaultValue function', async () => {
+    const defaultValue = vi.fn((value) => `${value}-default`)
+    const metadata: Metadata = {
+      name: {
+        hidden: true,
+        value: 'banana',
+        defaultValue,
+      },
+    }
+
+    await expect(extract(metadata)).resolves.toEqual({
+      name: 'banana-default',
+    })
+    expect(defaultValue).toHaveBeenCalledWith('banana', metadata.name, metadata)
   })
 
   it('supports async get hook', async () => {
@@ -136,6 +177,37 @@ describe('extract', () => {
     ).resolves.toEqual({
       name: 'banana-split',
     })
+  })
+
+  it('supports parallel get hooks', async () => {
+    const calls: string[] = []
+
+    await expect(
+      extract(
+        {
+          slow: {
+            value: 'slow',
+            async get(value) {
+              await new Promise((resolve) => setTimeout(resolve, 20))
+              calls.push('slow')
+              return value
+            },
+          },
+          fast: {
+            value: 'fast',
+            get(value) {
+              calls.push('fast')
+              return value
+            },
+          },
+        },
+        { parallel: true },
+      ),
+    ).resolves.toEqual({
+      slow: 'slow',
+      fast: 'fast',
+    })
+    expect(calls).toEqual(['fast', 'slow'])
   })
 
   it('merges object returned from get hook into result', async () => {
@@ -188,7 +260,7 @@ describe('extract', () => {
     })
   })
 
-  it('extracts children when recursive is true', async () => {
+  it('extracts children as flat values when recursive is true', async () => {
     await expect(
       extract(
         {
@@ -203,13 +275,11 @@ describe('extract', () => {
         { recursive: true },
       ),
     ).resolves.toEqual({
-      user: {
-        name: 'banana',
-      },
+      name: 'banana',
     })
   })
 
-  it('supports custom children field', async () => {
+  it('supports custom children field with flat recursive extraction', async () => {
     await expect(
       extract(
         {
@@ -227,9 +297,7 @@ describe('extract', () => {
         },
       ),
     ).resolves.toEqual({
-      user: {
-        name: 'banana',
-      },
+      name: 'banana',
     })
   })
 })

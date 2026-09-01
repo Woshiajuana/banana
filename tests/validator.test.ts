@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import type { Metadata } from '../src/types'
-import { validate } from '../src/validator'
+import { validate } from '../src/validate'
 
 describe('validate', () => {
   it('validates object metadata', async () => {
@@ -27,15 +27,98 @@ describe('validate', () => {
     ).resolves.toBeUndefined()
   })
 
-  it.each([undefined, null, '', []])('throws when required value is empty: %s', async (value) => {
+  it.each([undefined, null, '', [], {}, NaN])(
+    'throws when required value is empty: %s',
+    async (value) => {
+      await expect(
+        validate({
+          name: {
+            value,
+            rules: [{ required: true }],
+          },
+        }),
+      ).rejects.toThrow('This field is required')
+    },
+  )
+
+  it.each([0, false, ['banana'], { name: 'banana' }])(
+    'accepts required non-empty value: %s',
+    async (value) => {
+      await expect(
+        validate({
+          name: {
+            value,
+            rules: [{ required: true }],
+          },
+        }),
+      ).resolves.toBeUndefined()
+    },
+  )
+
+  it('does not add key to object metadata fields', async () => {
+    const metadata: Metadata = {
+      name: {
+        value: 'banana',
+        rules: [{ required: true }],
+      },
+    }
+
+    await validate(metadata)
+
+    expect(metadata.name).toEqual({
+      value: 'banana',
+      rules: [{ required: true }],
+    })
+  })
+
+  it('passes explicit field key to onError', async () => {
+    const onError = vi.fn()
+    const metadata: Metadata = {
+      name: {
+        key: 'username',
+        value: '',
+        rules: [{ required: true, message: '请输入名称' }],
+      },
+    }
+
+    await validate(metadata, { onError })
+
+    expect(onError).toHaveBeenCalledWith({
+      error: expect.objectContaining({ message: '请输入名称' }),
+      field: metadata.name,
+      key: 'username',
+      metadata,
+    })
+  })
+
+  it('supports parallel field validation', async () => {
+    const calls: string[] = []
+
     await expect(
-      validate({
-        name: {
-          value,
-          rules: [{ required: true }],
+      validate(
+        {
+          slow: {
+            value: 'slow',
+            rules: [
+              async () => {
+                await new Promise((resolve) => setTimeout(resolve, 20))
+                calls.push('slow')
+              },
+            ],
+          },
+          fast: {
+            value: 'fast',
+            rules: [
+              () => {
+                calls.push('fast')
+              },
+            ],
+          },
         },
-      }),
-    ).rejects.toThrow('This field is required')
+        { parallel: true },
+      ),
+    ).resolves.toBeUndefined()
+    expect(calls).toEqual(['fast', 'slow'])
   })
 
   it('uses custom required message', async () => {
@@ -49,7 +132,7 @@ describe('validate', () => {
     ).rejects.toThrow('请输入名称')
   })
 
-  it('uses defaultValue when value is undefined', async () => {
+  it('does not use defaultValue when value is undefined', async () => {
     await expect(
       validate({
         name: {
@@ -57,7 +140,7 @@ describe('validate', () => {
           rules: [{ required: true }],
         },
       }),
-    ).resolves.toBeUndefined()
+    ).rejects.toThrow('This field is required')
   })
 
   it('prefers value over defaultValue', async () => {
@@ -115,12 +198,12 @@ describe('validate', () => {
 
     expect(validator).toHaveBeenCalledWith(
       'banana',
-      expect.objectContaining({ key: 'name', value: 'banana' }),
+      expect.objectContaining({ value: 'banana' }),
       metadata,
     )
   })
 
-  it('uses rule message and preserves original error as cause', async () => {
+  it('throws original validator error without wrapping rule message', async () => {
     await expect(
       validate({
         name: {
@@ -135,12 +218,7 @@ describe('validate', () => {
           ],
         },
       }),
-    ).rejects.toMatchObject({
-      message: '自定义错误',
-      cause: expect.objectContaining({
-        message: '原始错误',
-      }),
-    })
+    ).rejects.toThrow('原始错误')
   })
 
   it('skips hidden field', async () => {
@@ -214,12 +292,16 @@ describe('validate', () => {
     )
 
     expect(onError).toHaveBeenCalledOnce()
-    expect(onError.mock.calls[0]?.[0]).toMatchObject({ message: '请输入名称' })
-    expect(onError.mock.calls[0]?.[1]).toMatchObject({ key: 'name' })
+    expect(onError).toHaveBeenCalledWith({
+      error: expect.objectContaining({ message: '请输入名称' }),
+      field: expect.objectContaining({ value: '', rules: expect.any(Array) }),
+      key: 'name',
+      metadata: expect.any(Object),
+    })
     expect(nextValidator).toHaveBeenCalledOnce()
   })
 
-  it('supports async onError', async () => {
+  it('calls onError as a notification callback', async () => {
     const errors: string[] = []
 
     await validate(
@@ -230,7 +312,7 @@ describe('validate', () => {
         },
       },
       {
-        async onError(error) {
+        onError({ error }) {
           errors.push(error instanceof Error ? error.message : String(error))
         },
       },
