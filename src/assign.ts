@@ -1,4 +1,5 @@
 import type { Metadata, Options } from './types'
+import type { NormalizedMetadataItem } from './utils'
 import { getChildrenMetadata, isFunction, isUndefined, normalizeMetadata } from './utils'
 
 export interface AssignOptions extends Options {}
@@ -9,13 +10,14 @@ export async function assign(
   options: AssignOptions = {},
 ) {
   const fields = normalizeMetadata(metadata)
+  const { recursive = false, parallel = false } = options
 
-  const processField = async ({ field, key }: (typeof fields)[number]) => {
+  const processField = async ({ field, key }: NormalizedMetadataItem) => {
     // eslint-disable-next-line prefer-const
     let { set } = field
 
     const children = getChildrenMetadata(field, options)
-    if (options.recursive === true && children) {
+    if (recursive && children) {
       await assign(source, children, options)
     }
 
@@ -31,7 +33,7 @@ export async function assign(
     }
   }
 
-  if (options.parallel) {
+  if (parallel) {
     await Promise.all(fields.map(processField))
   } else {
     for (const item of fields) {

@@ -1,4 +1,5 @@
 import type { Metadata, Options } from './types'
+import type { NormalizedMetadataItem } from './utils'
 import { getChildrenMetadata, isFunction, isObject, isUndefined, normalizeMetadata } from './utils'
 
 export interface ExtractOptions extends Options {}
@@ -9,15 +10,16 @@ export async function extract<T extends Record<string, unknown> = Record<string,
 ) {
   const result: Record<string, unknown> = {}
   const fields = normalizeMetadata(metadata)
-  const { recursive } = options
+  const { recursive = false, parallel = false } = options
 
-  for (const { field, key } of fields) {
+  const processField = async ({ field, key }: NormalizedMetadataItem) => {
+    const fieldResult: Record<string, unknown> = {}
     // eslint-disable-next-line prefer-const
     let { get, value, defaultValue, hidden } = field
 
     const children = getChildrenMetadata(field, options)
-    if (recursive === true && children) {
-      Object.assign(result, await extract(children, options))
+    if (recursive && children) {
+      Object.assign(fieldResult, await extract(children, options))
     }
 
     if (isFunction(hidden)) {
@@ -28,19 +30,30 @@ export async function extract<T extends Record<string, unknown> = Record<string,
     }
 
     if (isUndefined(value) || !key) {
-      continue
+      return fieldResult
     }
 
     if (isFunction(get)) {
       value = await get(value, field, metadata)
 
       if (isObject(value)) {
-        Object.assign(result, value)
+        Object.assign(fieldResult, value)
       } else {
-        result[key] = value
+        fieldResult[key] = value
       }
     } else {
-      result[key] = value
+      fieldResult[key] = value
+    }
+
+    return fieldResult
+  }
+
+  if (parallel) {
+    const results = await Promise.all(fields.map(processField))
+    Object.assign(result, ...results)
+  } else {
+    for (const item of fields) {
+      Object.assign(result, await processField(item))
     }
   }
 

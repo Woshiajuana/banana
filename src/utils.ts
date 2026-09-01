@@ -19,7 +19,11 @@ export function isEmpty(value: unknown) {
   )
 }
 
-export function normalizeMetadata(metadata: Metadata) {
+export interface NormalizedMetadataItem {
+  field: Field
+  key?: string
+}
+export function normalizeMetadata(metadata: Metadata): NormalizedMetadataItem[] {
   if (Array.isArray(metadata)) {
     return metadata.map((field) => ({
       field,
