@@ -4,6 +4,9 @@ export interface Options {
 
   // 子级字段名 默认 children
   childrenField?: string
+
+  // 是否并行执行 默认 false
+  parallel?: boolean
 }
 
 export type Validator = (value: unknown, field: Field, metadata: Metadata) => void | Promise<void>

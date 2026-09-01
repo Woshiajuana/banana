@@ -9,19 +9,18 @@ export async function assign(
   options: AssignOptions = {},
 ) {
   const fields = normalizeMetadata(metadata)
-  const { recursive } = options
 
-  for (const field of fields) {
+  const processField = async ({ field, key }: (typeof fields)[number]) => {
     // eslint-disable-next-line prefer-const
-    let { set, key } = field
+    let { set } = field
 
     const children = getChildrenMetadata(field, options)
-    if (recursive === true && children) {
+    if (options.recursive === true && children) {
       await assign(source, children, options)
     }
 
     if (!key) {
-      continue
+      return
     }
 
     const value = source[key]
@@ -29,6 +28,14 @@ export async function assign(
       await set(source, field, metadata)
     } else if (!isUndefined(value)) {
       field.value = value
+    }
+  }
+
+  if (options.parallel) {
+    await Promise.all(fields.map(processField))
+  } else {
+    for (const item of fields) {
+      await processField(item)
     }
   }
 }

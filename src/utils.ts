@@ -8,14 +8,28 @@ export const isFunction = <T extends (...args: any[]) => any>(v: unknown): v is 
 
 export const isUndefined = (v: unknown): v is undefined => typeof v === 'undefined'
 
-export function normalizeMetadata(metadata: Metadata): Field[] {
+export function isEmpty(value: unknown) {
+  return (
+    isUndefined(value) ||
+    value === null ||
+    value === '' ||
+    Number.isNaN(value) ||
+    (Array.isArray(value) && value.length === 0) ||
+    (isObject(value) && Object.keys(value).length === 0)
+  )
+}
+
+export function normalizeMetadata(metadata: Metadata) {
   if (Array.isArray(metadata)) {
-    return metadata
+    return metadata.map((field) => ({
+      field,
+      key: field.key,
+    }))
   }
 
   return Object.entries(metadata).map(([key, field]) => ({
+    field,
     key,
-    ...field,
   }))
 }
 

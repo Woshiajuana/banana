@@ -11,9 +11,9 @@ export async function extract<T extends Record<string, unknown> = Record<string,
   const fields = normalizeMetadata(metadata)
   const { recursive } = options
 
-  for (const field of fields) {
+  for (const { field, key } of fields) {
     // eslint-disable-next-line prefer-const
-    let { get, value, defaultValue, key, hidden } = field
+    let { get, value, defaultValue, hidden } = field
 
     const children = getChildrenMetadata(field, options)
     if (recursive === true && children) {
