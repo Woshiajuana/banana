@@ -1,5 +1,6 @@
-import type { Field, Metadata, Options, Rule } from './types'
-import { getChildrenMetadata, isEmpty, isFunction, isUndefined, normalizeMetadata } from './utils'
+import type { Field, Metadata, Options } from './types'
+import type { NormalizedMetadataItem } from './utils'
+import { getChildrenMetadata, isEmpty, isFunction, normalizeMetadata } from './utils'
 
 export interface ValidateOptions extends Options {
   onError?: (error: unknown, field: Field, metadata: Metadata) => void | Promise<void>
@@ -7,19 +8,49 @@ export interface ValidateOptions extends Options {
 
 export async function validate(metadata: Metadata, options: ValidateOptions = {}) {
   const fields = normalizeMetadata(metadata)
+  const { recursive = false, parallel = false } = options
 
-  for (const { field } of fields) {
-    const value = isUndefined(field.value) ? field.defaultValue : field.value
-    const hidden = isFunction(field.hidden)
-      ? field.hidden(value, field, metadata)
-      : field.hidden === true
+  const processField = async ({ field }: NormalizedMetadataItem) => {
+    // eslint-disable-next-line prefer-const
+    let { value, rules, hidden } = field
 
-    if (hidden) {
-      continue
+    const children = getChildrenMetadata(field, options)
+    if (recursive && children) {
+      await validate(children, options)
+    }
+
+    if (isFunction(hidden)) {
+      hidden = hidden(value, field, metadata)
+    }
+    if (hidden || !rules || !rules.length) {
+      return
     }
 
     try {
-      await runRules(value, field, metadata)
+      for (const rule of rules) {
+        if (isFunction(rule)) {
+          await rule(value, field, metadata)
+          continue
+        }
+
+        if (rule.required && isEmpty(value)) {
+          throw new Error(rule.message ?? 'This field is required')
+        }
+
+        if (!rule.validator) {
+          continue
+        }
+
+        try {
+          await rule.validator(value, field, metadata)
+        } catch (error) {
+          if (rule.message) {
+            throw new Error(rule.message, { cause: error })
+          }
+
+          throw error
+        }
+      }
     } catch (error) {
       if (!options.onError) {
         throw error
@@ -27,42 +58,13 @@ export async function validate(metadata: Metadata, options: ValidateOptions = {}
 
       await options.onError(error, field, metadata)
     }
+  }
 
-    const children = getChildrenMetadata(field, options)
-
-    if (options.recursive === true && children) {
-      await validate(children, options)
+  if (parallel) {
+    await Promise.all(fields.map(processField))
+  } else {
+    for (const item of fields) {
+      await processField(item)
     }
-  }
-}
-
-async function run(value: unknown, rule: Rule, field: Field = {}, metadata: Metadata = []) {
-  if (isFunction(rule)) {
-    await rule(value, field, metadata)
-    return
-  }
-
-  if (rule.required && isEmpty(value)) {
-    throw new Error(rule.message ?? 'This field is required')
-  }
-
-  if (!rule.validator) {
-    return
-  }
-
-  try {
-    await rule.validator(value, field, metadata)
-  } catch (error) {
-    if (rule.message) {
-      throw new Error(rule.message, { cause: error })
-    }
-
-    throw error
-  }
-}
-
-async function runRules(value: unknown, field: Field, metadata: Metadata) {
-  for (const rule of field.rules ?? []) {
-    await run(value, rule, field, metadata)
   }
 }
