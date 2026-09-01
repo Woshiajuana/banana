@@ -1,6 +1,6 @@
 {
   "name": "@ajuanjs/banana",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "校验、赋值、提取",
   "type": "module",
   "main": "dist/index.js",

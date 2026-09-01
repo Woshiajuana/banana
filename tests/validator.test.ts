@@ -4,7 +4,7 @@ import type { Metadata } from '../src/types'
 import { validate } from '../src/validate'
 
 describe('validate', () => {
-  it('validates object metadata', async () => {
+  it('validates object metadata and returns extracted values by default', async () => {
     await expect(
       validate({
         name: {
@@ -12,10 +12,12 @@ describe('validate', () => {
           rules: [{ required: true }],
         },
       }),
-    ).resolves.toBeUndefined()
+    ).resolves.toEqual({
+      name: 'banana',
+    })
   })
 
-  it('validates array metadata', async () => {
+  it('validates array metadata and returns extracted values by default', async () => {
     await expect(
       validate([
         {
@@ -24,6 +26,22 @@ describe('validate', () => {
           rules: [{ required: true }],
         },
       ]),
+    ).resolves.toEqual({
+      name: 'banana',
+    })
+  })
+
+  it('returns undefined when extract is false', async () => {
+    await expect(
+      validate(
+        {
+          name: {
+            value: 'banana',
+            rules: [{ required: true }],
+          },
+        },
+        { extract: false },
+      ),
     ).resolves.toBeUndefined()
   })
 
@@ -45,12 +63,15 @@ describe('validate', () => {
     'accepts required non-empty value: %s',
     async (value) => {
       await expect(
-        validate({
-          name: {
-            value,
-            rules: [{ required: true }],
+        validate(
+          {
+            name: {
+              value,
+              rules: [{ required: true }],
+            },
           },
-        }),
+          { extract: false },
+        ),
       ).resolves.toBeUndefined()
     },
   )
@@ -63,7 +84,7 @@ describe('validate', () => {
       },
     }
 
-    await validate(metadata)
+    await validate(metadata, { extract: false })
 
     expect(metadata.name).toEqual({
       value: 'banana',
@@ -115,7 +136,7 @@ describe('validate', () => {
             ],
           },
         },
-        { parallel: true },
+        { parallel: true, extract: false },
       ),
     ).resolves.toBeUndefined()
     expect(calls).toEqual(['fast', 'slow'])
@@ -194,7 +215,7 @@ describe('validate', () => {
       },
     }
 
-    await validate(metadata)
+    await validate(metadata, { extract: false })
 
     expect(validator).toHaveBeenCalledWith(
       'banana',
@@ -230,7 +251,7 @@ describe('validate', () => {
           rules: [{ required: true }],
         },
       }),
-    ).resolves.toBeUndefined()
+    ).resolves.toEqual({})
   })
 
   it('validates field when hidden is false', async () => {
@@ -258,7 +279,7 @@ describe('validate', () => {
           ],
         },
       }),
-    ).resolves.toBeUndefined()
+    ).resolves.toEqual({})
   })
 
   it('validates field when hidden function returns false', async () => {
@@ -341,16 +362,19 @@ describe('validate', () => {
 
   it('does not validate children by default', async () => {
     await expect(
-      validate({
-        user: {
-          children: {
-            name: {
-              value: '',
-              rules: [{ required: true }],
+      validate(
+        {
+          user: {
+            children: {
+              name: {
+                value: '',
+                rules: [{ required: true }],
+              },
             },
           },
         },
-      }),
+        { extract: false },
+      ),
     ).resolves.toBeUndefined()
   })
 
@@ -407,6 +431,7 @@ describe('validate', () => {
         },
         {
           childrenField: 'fields',
+          extract: false,
         },
       ),
     ).resolves.toBeUndefined()

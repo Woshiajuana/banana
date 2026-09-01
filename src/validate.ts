@@ -1,3 +1,4 @@
+import { extract as extractMetadata } from './extract'
 import type { Field, Metadata, Options } from './types'
 import type { NormalizedMetadataItem } from './utils'
 import { getChildrenMetadata, isEmpty, isFunction, normalizeMetadata } from './utils'
@@ -11,11 +12,28 @@ export interface ValidateErrorContext {
 
 export interface ValidateOptions extends Options {
   onError?: (context: ValidateErrorContext) => void
+  extract?: boolean
 }
 
-export async function validate(metadata: Metadata, options: ValidateOptions = {}) {
+export interface ValidateExtractOptions extends ValidateOptions {
+  extract?: true
+}
+
+export interface ValidateOnlyOptions extends ValidateOptions {
+  extract: false
+}
+
+export function validate<T extends Record<string, unknown> = Record<string, unknown>>(
+  metadata: Metadata,
+  options?: ValidateExtractOptions,
+): Promise<T>
+export function validate(metadata: Metadata, options: ValidateOnlyOptions): Promise<void>
+export async function validate<T extends Record<string, unknown> = Record<string, unknown>>(
+  metadata: Metadata,
+  options: ValidateOptions = {},
+): Promise<T | void> {
   const fields = normalizeMetadata(metadata)
-  const { recursive = false, parallel = false } = options
+  const { recursive = false, parallel = false, extract = true } = options
 
   const processField = async ({ field, key }: NormalizedMetadataItem) => {
     // eslint-disable-next-line prefer-const
@@ -23,7 +41,10 @@ export async function validate(metadata: Metadata, options: ValidateOptions = {}
 
     const children = getChildrenMetadata(field, options)
     if (recursive && children) {
-      await validate(children, options)
+      await validate(children, {
+        ...options,
+        extract: false,
+      })
     }
 
     if (isFunction(hidden)) {
@@ -70,5 +91,9 @@ export async function validate(metadata: Metadata, options: ValidateOptions = {}
     for (const item of fields) {
       await processField(item)
     }
+  }
+
+  if (extract) {
+    return extractMetadata<T>(metadata, options)
   }
 }
